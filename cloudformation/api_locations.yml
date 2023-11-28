@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Locations Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/locations
+  apiResourceLocations:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: locations
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/locations
+  apiMethodLocationsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: locations_locations_list
+        OperationName: Locations - List
+        ParentResourceId: !Ref apiResourceLocations
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/locations
+
+  # POST/v1/locations
+  apiMethodLocationCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"location_name\":  $input.json('location_name'),"
+            - "\"street_number\":$input.json('street_number'),"
+            - "\"structure_name\": $input.json('structure_name'),"
+            - "\"street_number_suffix\": $input.json('street_number_suffix'),"
+            - "\"street_name\": $input.json('street_name'),"
+            - "\"street_type\": $input.json('street_type'),"
+            - "\"street_direction\": $input.json('street_direction'),"
+            - "\"address_type\": $input.json('address_type'),"
+            - "\"address_type_identifier\": $input.json('address_type_identifier'),"
+            - "\"city\": $input.json('city'),"
+            - "\"governing_district\": $input.json('governing_district'),"
+            - "\"postal_area\": $input.json('postal_area'),"
+            - "\"local_municipality\": $input.json('local_municipality'),"
+            - "\"country\": $input.json('country'),"
+            - "\"gps_latitude\": $input.json('gps_latitude'),"
+            - "\"gps_longitude\": $input.json('gps_longitude'),"
+        HttpMethod: POST
+        LambdaName: locations_location_create
+        OperationName: Location - Create
+        ParentResourceId: !Ref apiResourceLocations
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/locations
+
+  # /v1/locations/{location-id}
+  apiResourceLocation:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceLocations
+      PathPart: "{location-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/locations/{location-id}
+  apiMethodLocationDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\":$input.params('location-id'),"
+        HttpMethod: DELETE
+        LambdaName: locations_location_delete
+        OperationName: Location - Delete
+        ParentResourceId: !Ref apiResourceLocation
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/locations/*
+
+  # GET/v1/locations/{location-id}
+  apiMethodLocationGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\" : $input.params('location-id'),"
+        LambdaName: locations_location_get
+        OperationName: Location - Get
+        ParentResourceId: !Ref apiResourceLocation
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/locations/*
+
+  # POST/v1/locations/{location-id}
+  apiMethodLocationUpdate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"id\":  $input.params('location-id'),"
+            - "\"location_name\":  $input.json('location_name'),"
+            - "\"street_number\":$input.json('street_number'),"
+            - "\"structure_name\": $input.json('structure_name'),"
+            - "\"street_number_suffix\": $input.json('street_number_suffix'),"
+            - "\"street_name\": $input.json('street_name'),"
+            - "\"street_type\": $input.json('street_type'),"
+            - "\"street_direction\": $input.json('street_direction'),"
+            - "\"address_type\": $input.json('address_type'),"
+            - "\"address_type_identifier\": $input.json('address_type_identifier'),"
+            - "\"city\": $input.json('city'),"
+            - "\"governing_district\": $input.json('governing_district'),"
+            - "\"postal_area\": $input.json('postal_area'),"
+            - "\"local_municipality\": $input.json('local_municipality'),"
+            - "\"country\": $input.json('country'),"
+            - "\"gps_latitude\": $input.json('gps_latitude'),"
+            - "\"gps_longitude\": $input.json('gps_longitude'),"
+        HttpMethod: POST
+        LambdaName: locations_location_update
+        OperationName: Location - Update
+        ParentResourceId: !Ref apiResourceLocation
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/locations/*
+
+  # /v1/locations/address-types
+  apiResourceLocationsAddressTypes:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceLocations
+      PathPart: address-types
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/locations/address-types
+  apiMethodLocationsAddressTypesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: locations_address_types_list
+        OperationName: Locations - Address Types - List
+        ParentResourceId: !Ref apiResourceLocationsAddressTypes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/locations/address-types
+
+  # /v1/locations/countries
+  apiResourceLocationsCountries:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceLocations
+      PathPart: countries
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/locations/countries
+  apiMethodLocationsCountriesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: locations_countries_list
+        OperationName: Locations - Countries - List
+        ParentResourceId: !Ref apiResourceLocationsCountries
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/locations/countries
+
+  # /v1/locations/location-codes
+  apiResourceLocationsLocationCodes:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceLocations
+      PathPart: location-codes
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/locations/location-codes
+  apiMethodLocationsLocationCodesList:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: locations_accounting_location_codes_list
+        OperationName: Locations - Location Codes - List
+        ParentResourceId: !Ref apiResourceLocationsLocationCodes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/locations/location-codes
+
+  # POST/v1/locations/location-codes
+  apiMethodLocationsLocationCodesCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"code\": $input.json('code'),"
+        HttpMethod: POST
+        LambdaName: locations_accounting_location_code_create
+        OperationName: Locations Location Code - Create
+        ParentResourceId: !Ref apiResourceLocationsLocationCodes
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/locations/location-codes
+
+  # /v1/locations/location-codes/{code-id}
+  apiResourceLocationsLocationCode:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceLocationsLocationCodes
+      PathPart: "{code-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/locations/location-codes/{code-id}
+  apiMethodLocationLocationCodeDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\":$input.params('code-id'),"
+        HttpMethod: DELETE
+        LambdaName: locations_accounting_location_code_delete
+        OperationName: Locations Location Code - Delete
+        ParentResourceId: !Ref apiResourceLocationsLocationCode
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/locations/location-codes/*
+
+  # /v1/locations/{location-id}/location-code
+  apiResourceLocationsLocationIdLocationCode:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceLocation
+      PathPart: location-code
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/locations/{location-id}/location-code
+  apiMethodLocationsLocationIdLocationCodeSet:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"location_id\": $input.params('location-id'),"
+            - "\"accounting_location_code_id\":$input.json('accounting_location_code_id'),"
+        HttpMethod: POST
+        LambdaName: locations_location_accounting_location_code_set
+        OperationName: Locations - Set Accounting Location Code
+        ParentResourceId: !Ref apiResourceLocationsLocationIdLocationCode
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/locations/*/location-code

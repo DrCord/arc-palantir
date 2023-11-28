@@ -1,0 +1,675 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Users Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/users
+  apiResourceUsers:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: users
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users
+  apiMethodUsersList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_users_list
+        OperationName: Users - List
+        ParentResourceId: !Ref apiResourceUsers
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users
+
+  # POST/v1/users
+  apiMethodUserCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"email\": $input.json('$.email'),"
+            - "\"phone\": $input.json('$.phone'),"
+            - "\"display_name\": $input.json('$.display_name'),"
+            - "\"enable_mfa\": $input.json('$[?(@.enable_mfa!=\"\")]'),"
+        HttpMethod: POST
+        LambdaName: users_create_user
+        OperationName: User - Create
+        ParentResourceId: !Ref apiResourceUsers
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users
+  
+  # /v1/users/abilities
+  apiResourceUsersAbilities:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: abilities
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/abilities
+  apiMethodUsersAbilitiesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_permissions_abilities_list
+        OperationName: User Abilities - List
+        ParentResourceId: !Ref apiResourceUsersAbilities
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/abilities
+
+  # POST/v1/users/abilities
+  apiMethodAbilityCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"ability\" : $input.json('ability'),"
+            - "\"description\" : $input.json('description'),"
+            - "\"permissions\" : $input.json('permissions'),"
+        HttpMethod: POST
+        LambdaName: users_permissions_ability_create
+        OperationName: User Permission Ability - Create
+        ParentResourceId: !Ref apiResourceUsersAbilities
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/abilities
+
+  # /v1/users/abilities/{ability-id}
+  apiResourceUsersAbility:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsersAbilities
+      PathPart: "{ability-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/users/abilities/{ability-id}
+  apiMethodAbilityDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\" : $input.params('ability-id'),"
+        HttpMethod: DELETE
+        LambdaName: users_permissions_ability_delete
+        OperationName: User Permission Ability - Delete
+        ParentResourceId: !Ref apiResourceUsersAbility
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/users/abilities/*
+
+  # GET/v1/users/abilities/{ability-id}
+  apiMethodUsersAbilityGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_permissions_ability_get
+        OperationName: User Abilities - List
+        ParentResourceId: !Ref apiResourceUsersAbility
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/abilities/*
+
+  # POST/v1/users/abilities/{ability-id}
+  apiMethodAbilityEdit:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"id\" : $input.params('ability-id'),"
+            - "\"ability\" : $input.json('ability'),"
+            - "\"description\" : $input.json('description'),"
+            - "\"permissions\" : $input.json('permissions'),"
+        HttpMethod: POST
+        LambdaName: users_permissions_ability_edit
+        OperationName: User Permission Ability - Edit
+        ParentResourceId: !Ref apiResourceUsersAbility
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/abilities/*
+
+  # TODO ?
+  # /v1/users/permission-groups
+  apiResourceUsersPermissionGroups:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: permission-groups
+      RestApiId: !Ref RestApiId
+
+  # TODO ?
+  # /v1/users/permissions
+  apiResourceUsersPermissions:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: permissions
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/preferences
+  apiResourceUsersPreferences:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: preferences
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/preferences
+  apiMethodUsersPreferencesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_preferences_list
+        OperationName: Users Preferences - List
+        ParentResourceId: !Ref apiResourceUsersPreferences
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/preferences
+
+  # /v1/users/{username}
+  apiResourceUser:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: "{username}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/{username}
+  apiMethodUserGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        LambdaName: users_user_get
+        OperationName: User - Get
+        ParentResourceId: !Ref apiResourceUser
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/*
+
+  # /v1/users/{username}/abilities
+  apiResourceUserAbilities:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: abilities
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/{username}/abilities/{ability-id}
+  apiResourceUserAbility:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserAbilities
+      PathPart: "{ability-id}"
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/abilities/{ability-id}
+  apiMethodUserGrantAbility:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+        - "\n"
+        - - "\"username\" : \"$input.params('username')\","
+          - "\"ability_id\" : $input.params('ability-id'),"
+        HttpMethod: POST
+        LambdaName: users_ability_grant
+        OperationName: User - Grant Ability
+        ParentResourceId: !Ref apiResourceUserAbility
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/abilities/*
+
+  # /v1/users/{username}/disable
+  apiResourceUserDisable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: disable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/disable
+  apiMethodUserDisable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_disable_user
+        OperationName: User - Disable
+        ParentResourceId: !Ref apiResourceUserDisable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/disable
+
+  # /v1/users/{username}/enable
+  apiResourceUserEnable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: enable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/enable
+  apiMethodUserEnable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_enable_user
+        OperationName: User - Enable
+        ParentResourceId: !Ref apiResourceUserEnable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/enable
+
+  # /v1/users/{username}/fleets
+  apiResourceUserFleets:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: fleets
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/{username}/fleets
+  apiMethodUserFleetsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        LambdaName: user_groups_get
+        OperationName: User Fleets - List
+        ParentResourceId: !Ref apiResourceUserFleets
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/*/fleets
+
+  # /v1/users/{username}/mfa
+  apiResourceUserMfa:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: mfa
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/{username}/mfa/sms
+  apiResourceUserMfaSms:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfa
+      PathPart: sms
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/{username}/mfa/sms/disable
+  apiResourceUserMfaSmsDisable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaSms
+      PathPart: disable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/sms/disable
+  apiMethodUserMfaSmsDisable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_user_mfa_sms_disable
+        OperationName: User MFA SMS - Disable
+        ParentResourceId: !Ref apiResourceUserMfaSmsDisable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/sms/disable
+
+  # /v1/users/{username}/mfa/sms/enable
+  apiResourceUserMfaSmsEnable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaSms
+      PathPart: enable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/sms/enable
+  apiMethodUserMfaSmsEnable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_user_mfa_sms_enable
+        OperationName: User MFA SMS - Enable
+        ParentResourceId: !Ref apiResourceUserMfaSmsEnable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/sms/enable
+
+  # /v1/users/{username}/mfa/totp
+  apiResourceUserMfaTotp:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfa
+      PathPart: totp
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/{username}/mfa/totp/disable
+  apiResourceUserMfaTotpDisable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaTotp
+      PathPart: disable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/totp/disable
+  apiMethodUserMfaTotpDisable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_user_mfa_totp_disable
+        OperationName: User MFA TOTP - Disable
+        ParentResourceId: !Ref apiResourceUserMfaTotpDisable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/totp/disable
+
+  # /v1/users/{username}/mfa/totp/enable
+  apiResourceUserMfaTotpEnable:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaTotp
+      PathPart: enable
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/totp/disable
+  apiMethodUserMfaTotpEnable:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_user_mfa_totp_enable
+        OperationName: User MFA TOTP - Enable
+        ParentResourceId: !Ref apiResourceUserMfaTotpEnable
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/totp/enable
+
+  # /v1/users/{username}/mfa/totp/token
+  apiResourceUserMfaTotpToken:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaTotp
+      PathPart: token
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/{username}/mfa/totp/token/associate
+  apiResourceUserMfaTotpTokenAssociate:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaTotpToken
+      PathPart: associate
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/totp/token/associate
+  apiMethodUserMfaTotpTokenAssociate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"access_token\" : $input.json('access_token'),"
+        HttpMethod: POST
+        LambdaName: users_user_mfa_totp_associate_token
+        OperationName: User MFA TOTP - Associate Token
+        ParentResourceId: !Ref apiResourceUserMfaTotpTokenAssociate
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/totp/token/associate
+
+  # /v1/users/{username}/mfa/totp/token/verify
+  apiResourceUserMfaTotpTokenVerify:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUserMfaTotpToken
+      PathPart: verify
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/mfa/totp/token/verify
+  apiMethodUserMfaTotpTokenVerify:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"access_token\": $input.json('access_token'),"
+            - "\"user_code\": $input.json('$.user_code'),"
+            - "\"friendly_device_name\": $input.json('$.friendly_device_name'),"
+        HttpMethod: POST
+        LambdaName: users_user_mfa_totp_verify_token
+        OperationName: User MFA TOTP - Verify Token
+        ParentResourceId: !Ref apiResourceUserMfaTotpTokenVerify
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/mfa/totp/token/verify
+
+  # /v1/users/{username}/notes
+  apiResourceUserNotes:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: notes
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/{username}/notes
+  apiMethodUserNotesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+        - "\n"
+        - - "\"object_id\" : \"$input.params('username')\","
+          - "\"object_type\": \"User\","
+        LambdaName: notes_get
+        OperationName: User Notes - Get
+        ParentResourceId: !Ref apiResourceUserNotes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/*/notes
+
+  # POST/v1/users/{username}/notes
+  apiMethodUserNoteCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"object_id\" : \"$input.params('username')\","
+            - "\"tags\" : $input.json('tags'),"
+            - "\"object_type\" : \"User\","
+            - "\"content\" : $input.json('content'),"
+            - "\"body\" : $input.json('$'),"
+            - "\"author\": \"$context.authorizer.claims.sub\","
+        HttpMethod: POST
+        LambdaName: note_create
+        OperationName: User Note - Create
+        ParentResourceId: !Ref apiResourceUserNotes
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/notes
+
+  # /v1/users/{username}/preferences
+  apiResourceUserPreferences:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: preferences
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/preferences
+  apiMethodUserPreferenceSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"username\":\"$input.params('username')\","
+            - "\"preference_identifier\":$input.json('$.preference_identifier'),"
+            - "\"preference_value\":$input.json('$.preference_value'),"
+        HttpMethod: POST
+        LambdaName: users_add_preference_to_user
+        OperationName: User Preference - Set
+        ParentResourceId: !Ref apiResourceUserPreferences
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/preferences
+
+  # GET/v1/users/{username}/preferences
+  apiMethodUserPreferencesGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\":\"$input.params('username')\""
+        LambdaName: users_preferences_list
+        OperationName: User Preferences - Get
+        ParentResourceId: !Ref apiResourceUserPreferences
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/*/preferences
+
+  # /v1/users/{username}/profile
+  apiResourceUserProfile:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: profile
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/users/{username}/profile
+  apiMethodUserProfileGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_profile_get
+        OperationName: User Profile - Get
+        ParentResourceId: !Ref apiResourceUserProfile
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/users/*/profile
+
+  # POST/v1/users/{username}/profile
+  apiMethodUserProfileEdit:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"username\":\"$input.params('username')\","
+            - "\"email\":$input.json('$.email'),"
+            - "\"phone\":$input.json('$.phone'),"
+            - "\"display_name\":$input.json('$.display_name'),"
+            - "\"avatar\":$input.json('$.avatar'),"
+        HttpMethod: POST
+        LambdaName: users_profile_update
+        OperationName: User Profile - Edit
+        ParentResourceId: !Ref apiResourceUserProfile
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/profile
+
+  # /v1/users/{username}/resend-invite
+  apiResourceUserResendInvite:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUser
+      PathPart: resend-invite
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/{username}/resend-invite
+  apiMethodUserResendInvite:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"username\" : \"$input.params('username')\","
+        HttpMethod: POST
+        LambdaName: users_resend_user_invite
+        OperationName: User - Resend Invite
+        ParentResourceId: !Ref apiResourceUserResendInvite
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/*/resend-invite
+
+  # /v1/users/verify
+  apiResourceUsersVerify:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsers
+      PathPart: verify
+      RestApiId: !Ref RestApiId
+
+  # /v1/users/verify/dl
+  apiResourceUsersVerifyDl:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceUsersVerify
+      PathPart: dl
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/users/verify/dl
+  apiMethodUsersVerifyDl:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"first_name\":\"$input.params('first_name')\","
+            - "\"last_name\":$input.json('last_name'),"
+            - "\"email\":$input.json('email'),"
+            - "\"drivers_license_number\":$input.json('drivers_license_number'),"
+            - "\"state\":$input.json('state'),"
+        HttpMethod: POST
+        LambdaName: sheer_id_verify_dl
+        OperationName: Users - Verify DL
+        ParentResourceId: !Ref apiResourceUsersVerifyDl
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/users/verify/dl

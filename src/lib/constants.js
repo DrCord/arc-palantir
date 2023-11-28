@@ -1,0 +1,6 @@
+export const FLEETS_LIST = 'fleetsList'
+export const LOCAL_STORAGE_APPLICATION = 'Palantir'
+export const LOCAL_STORAGE_NAMESPACE = 'Arcimoto'
+export const VEHICLES_LIST = 'vehiclesList'
+export const VEHICLES_WITH_AUTHORITIES_LIST = 'vehiclesWithAuthoritiesList'
+export const VEHICLES_WITH_LOCATIONS_LIST = 'vehiclesWithLocationsList'

@@ -1,0 +1,1110 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Vehicles Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/vehicles
+  apiResourceVehicles:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: vehicles
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles
+  apiMethodVehiclesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: list_telemetry_vehicles
+        OperationName: Vehicles - List
+        ParentResourceId: !Ref apiResourceVehicles
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles
+
+  # /v1/vehicles/authorities
+  apiResourceVehiclesAuthorities:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: authorities
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/authorities
+  apiMethodVehiclesAuthoritiesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: list_vehicles
+        OperationName: Vehicles Authorities - List
+        ParentResourceId: !Ref apiResourceVehiclesAuthorities
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/authorities
+
+  # /v1/vehicles/firmware
+  apiResourceVehiclesFirmware:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: firmware
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/firmware/components
+  apiResourceVehiclesFirmwareComponents:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesFirmware
+      PathPart: components
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/firmware/components
+  apiMethodVehiclesFirmwareComponents:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: vehicles_firmware_components_list
+        OperationName: Vehicles Firmware Components - List
+        ParentResourceId: !Ref apiResourceVehiclesFirmwareComponents
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/firmware/components
+
+  # /v1/vehicles/firmware/version
+  apiResourceVehiclesFirmwareVersion:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesFirmware
+      PathPart: version
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/firmware/version
+  apiMethodVehiclesFirmwareVersion:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: firmware_version_get
+        OperationName: Vehicles Versions - Get
+        ParentResourceId: !Ref apiResourceVehiclesFirmwareVersion
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/firmware/version
+
+  # /v1/vehicles/managed-sessions
+  apiResourceVehiclesManagedSessions:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: managed-sessions
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/managed-sessions
+  apiMethodVehiclesManagedSessionsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: managed_session_list
+        OperationName: Managed Sessions - List
+        ParentResourceId: !Ref apiResourceVehiclesManagedSessions
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/managed-sessions
+
+  # /v1/vehicles/managed-sessions/{managed-session-id}
+  apiResourceVehiclesManagedSession:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesManagedSessions
+      PathPart: "{managed-session-id}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/managed-sessions/{managed-session-id}
+  apiMethodVehiclesManagedSessionGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\" : $input.params('managed-session-id'),"
+        LambdaName: managed_session_get
+        OperationName: Managed Session - Get
+        ParentResourceId: !Ref apiResourceVehiclesManagedSession
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/managed-sessions/*
+
+  # /v1/vehicles/managed-sessions/{managed-session-id}/telemetry
+  apiResourceVehiclesManagedSessionTelemetry:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesManagedSession
+      PathPart: telemetry
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/managed-sessions/{managed-session-id}/telemetry
+  apiMethodManagedSessionTelemetryGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"managed_session_id\" : $input.params('managed-session-id'),"
+        LambdaName: managed_session_telemetry_get
+        OperationName: Managed Session Telemetry - Get
+        ParentResourceId: !Ref apiResourceVehiclesManagedSessionTelemetry
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/managed-sessions/*/telemetry
+
+  # /v1/vehicles/metrics
+  apiResourceVehiclesMetrics:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: metrics
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/metrics
+  apiMethodVehiclesMetricsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: get_telemetry_metrics_keys
+        OperationName: Vehicle Telemetry Metrics Keys - List
+        ParentResourceId: !Ref apiResourceVehiclesMetrics
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/metrics
+
+  # /v1/vehicles/metrics/{version-id}
+  apiResourceVehiclesMetricsVersion:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesMetrics
+      PathPart: "{version-id}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/metrics/{version-id}
+  apiMethodMetricsVersionGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"versionId\": \"$input.params('version-id')\","
+        LambdaName: get_telemetry_metrics_keys
+        OperationName: Vehicles Telemetry Metrics Keys Version - Get
+        ParentResourceId: !Ref apiResourceVehiclesMetricsVersion
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/metrics/*
+
+  # /v1/vehicles/model-releases
+  apiResourceVehiclesModelReleases:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: model-releases
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/model-releases
+  apiMethodVehiclesModelReleasesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: vehicles_model_releases_list
+        OperationName: Model Releases - List
+        ParentResourceId: !Ref apiResourceVehiclesModelReleases
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/model-releases
+
+  # POST/v1/vehicles/model-releases
+  apiMethodVehiclesModelReleaseCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"model_id\" : $input.json('model_id'),"
+            - "\"description\": $input.json('description'),"
+            - "\"parts\": $input.json('parts'),"
+        HttpMethod: POST
+        LambdaName: vehicles_model_release_create
+        OperationName: Model Release - Create
+        ParentResourceId: !Ref apiResourceVehiclesModelReleases
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/model-releases
+
+  # /v1/vehicles/models
+  apiResourceVehiclesModels:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: models
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/models
+  apiMethodVehiclesModelsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: vehicles_models_list
+        OperationName: Models - List
+        ParentResourceId: !Ref apiResourceVehiclesModels
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/models
+
+  # /v1/vehicles/parts
+  apiResourceVehiclesParts:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: parts
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/parts/{model-release-id}
+  apiResourceVehiclesPartsModelRelease:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehiclesParts
+      PathPart: "{model-release-id}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/parts/{model-release-id}
+  apiMethodVehiclesPartsModelReleaseGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"model_release_id\" : $input.params('model-release-id'),"
+        LambdaName: vehicles_model_release_parts_get
+        OperationName: Vehicle Parts Model Release - Get
+        ParentResourceId: !Ref apiResourceVehiclesPartsModelRelease
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/parts/*
+
+  # POST/v1/vehicles/parts/{model-release-id}
+  apiMethodVehiclesPartsModelReleasePartSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"model_release_id\" : $input.params('model-release-id'),"
+            - "\"part_type\": $input.json('part_type'),"
+            - "\"part_number\": $input.json('part_number'),"
+        HttpMethod: POST
+        LambdaName: vehicles_model_release_part_set
+        OperationName: Vehicle Model Release - Part Set
+        ParentResourceId: !Ref apiResourceVehiclesPartsModelRelease
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/parts/*
+
+  # /v1/vehicles/telemetry
+  apiResourceVehiclesTelemetry:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: telemetry
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/telemetry
+  # doesn't use nested template due to needing custom querystring params and responses
+  apiMethodVehiclesTelemetryGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Vehicles - Telemetry Get
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizerId
+      HttpMethod: GET
+      RequestParameters: 
+        method.request.querystring.telemetry_points: true
+        method.request.querystring.vins: true
+      ResourceId: !Ref apiResourceVehiclesTelemetry
+      RestApiId: !Ref RestApiId
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: "200"
+          # SelectionPattern: String # regex to match for errors, leave out for 200 (default) code
+          - StatusCode: "401"
+            SelectionPattern: "(.*Unauthorized.*)"
+          - StatusCode: "404"
+            SelectionPattern: !Join 
+              - "|"
+              - - "(.*Invalid.*)"
+                - "(.*does not exist.*)"
+          - StatusCode: "500"
+            SelectionPattern: "(.*Unable to get Influx IP.*)"
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestParameters: 
+          integration.request.querystring.telemetry_points: method.request.path.telemetry_points
+          integration.request.querystring.vins: method.request.path.vins
+        RequestTemplates: 
+          "application/json" : !Join
+            - "\n"
+            - - "#set($allParams = $input.params())"
+              - "{"
+              - "\"body-json\" : $input.json('$'),"
+              - "\"params\" : {"
+              - "#foreach($type in $allParams.keySet())"
+              - "\t#set($params = $allParams.get($type))"
+              - "\"$type\" : {"
+              - "\t#foreach($paramName in $params.keySet())"
+              - "\t\"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\""
+              - "\t\t#if($foreach.hasNext),#end"
+              - "\t#end"
+              - "}"
+              - "\t#if($foreach.hasNext),#end"
+              - "#end"
+              - "}"
+              - "}"
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${lambdaAlias}/invocations
+          - lambdaAlias: !Join 
+            - ""
+            - - "${stageVariables.func_"
+              - telemetry_vehicles_timestream_get
+              - "}"
+      MethodResponses:
+        - ResponseModels: 
+            "application/json" : Empty
+          StatusCode: "200"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "401"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "404"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "500"
+
+  # GET/v1/vehicles/telemetry
+  # lambda invoke permissions for all ENVs
+  lambdaApiGatewayInvokeVehiclesTelemetryGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/lambda_invoke_envs.yml
+      Parameters:
+        RestApiId: !Ref RestApiId
+        LambdaName: telemetry_vehicles_timestream_get
+        Route: GET/v1/vehicles/telemetry
+
+  # /v1/vehicles/{vin}
+  apiResourceVehicle:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicles
+      PathPart: "{vin}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}
+  apiMethodVehicleGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: get_telemetry_vehicle
+        OperationName: Vehicle - Get
+        ParentResourceId: !Ref apiResourceVehicle
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*
+
+  # /v1/vehicles/{vin}/authorities
+  apiResourceVehicleAuthorities:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: authorities
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/authorities
+  apiMethodVehicleAuthoritiesGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: authkey_vehicle_get
+        OperationName: Vehicle Authorities - Get
+        ParentResourceId: !Ref apiResourceVehicleAuthorities
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/authorities
+
+  # /v1/vehicles/{vin}/configuration
+  apiResourceVehicleConfiguration:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: configuration
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/configuration
+  apiMethodVehicleConfigurationSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"configuration\": $input.json('$.configuration')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle - Set Configuration
+        ParentResourceId: !Ref apiResourceVehicleConfiguration
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/configuration
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"vehicles_configuration_set\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"update_shadow_document\""
+            - "}"
+
+  # /v1/vehicles/{vin}/firmware
+  apiResourceVehicleFirmware:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: firmware
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/{vin}/firmware/version
+  apiResourceVehicleFirmwareVersion:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleFirmware
+      PathPart: version
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/firmware/version
+  apiMethodVehicleFirmwareVersionGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: firmware_version_vin_get
+        OperationName: Vehicle Firmware - Get Version
+        ParentResourceId: !Ref apiResourceVehicleFirmwareVersion
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/firmware/version
+
+  # POST/v1/vehicles/{vin}/firmware/version
+  apiMethodVehicleFirmwareVersionSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"firmware_modules_input\": $input.json('$.firmware_modules_input')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle Firmware - Set Versions
+        ParentResourceId: !Ref apiResourceVehicleFirmwareVersion
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/firmware/version
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"firmware_version_get\","
+            - "\"output\":{"
+            - "\t\"firmware\": \"firmware_modules\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"firmware_version_vin_set\""
+            - "}"
+
+  # /v1/vehicles/{vin}/fleets
+  apiResourceVehicleFleets:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: fleets
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/{vin}/fleets/{fleet-id}
+  apiResourceVehicleFleet:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleFleets
+      PathPart: "{fleet-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/vehicles/{vin}/fleets/{fleet-id}
+  apiMethodFleetRemoveVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        Custom403Response: "(.*Vehicles cannot be removed from .* group.*)"
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\": $input.params('$.fleet-id'),"
+            - "\"vin\": \"$input.params('vin')\","
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Remove Vehicle
+        ParentResourceId: !Ref apiResourceVehicleFleet
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/vehicles/*/fleets/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"remove_vehicle_from_group\","
+            - "\t\"reverse\":\"add_vehicle_to_group\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"provision_grafana_overview\""
+            - "}"
+
+  # PUT/v1/vehicles/{vin}/fleets/{fleet-id}
+  apiMethodFleetAddVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        Custom403Response: "(.*Vehicles cannot be removed from .* group.*)"
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\": $input.params('$.fleet-id'),"
+            - "\"vin\": \"$input.params('vin')\","
+        HttpMethod: PUT
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Add Vehicle
+        ParentResourceId: !Ref apiResourceVehicleFleet
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/vehicles/*/fleets/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"add_vehicle_to_group\","
+            - "\t\"reverse\":\"remove_vehicle_from_group\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"provision_grafana_overview\""
+            - "}"
+
+  # /v1/vehicles/{vin}/gps
+  apiResourceVehicleGps:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: gps
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/gps
+  apiMethodVehicleGpsGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: gps_privacy_setting_get
+        OperationName: Vehicle GPS Privacy Setting - Get
+        ParentResourceId: !Ref apiResourceVehicleGps
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/gps
+
+  # POST/v1/vehicles/{vin}/gps
+  apiMethodVehicleGpsRecordSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"record_gps\": $input.json('$.record_gps')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle GPS - Toggle Record
+        ParentResourceId: !Ref apiResourceVehicleGps
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/gps
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"gps_recording_toggle\","
+            - "\t\"reverse\":\"gps_recording_toggle\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"update_shadow_document\""
+            - "}"
+
+  # /v1/vehicles/{vin}/managed-sessions
+  apiResourceVehicleManagedSessions:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: managed-sessions
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/managed-sessions
+  apiMethodVehicleManagedSessionsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: managed_session_get
+        OperationName: Vehicle Managed Sessions - List
+        ParentResourceId: !Ref apiResourceVehicleManagedSessions
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/managed-sessions
+
+  # /v1/vehicles/{vin}/managed-sessions/end
+  apiResourceVehicleManagedSessionEnd:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleManagedSessions
+      PathPart: end
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/managed-sessions/end
+  apiMethodVehicleManagedSessionEnd:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\": \"$input.params('vin')\""
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle Managed Session - End
+        ParentResourceId: !Ref apiResourceVehicleManagedSessionEnd
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/managed-sessions/end
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"managed_session_end\","
+            - "\t\"output\": {"
+            - "\t\t\"id\": \"id\","
+            - "\t\t\"initialization\": \"initialization\","
+            - "\t\t\"completion\": \"completion\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"update_shadow_document\""
+            - "}"
+
+  # /v1/vehicles/{vin}/managed-sessions/start
+  apiResourceVehicleManagedSessionStart:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleManagedSessions
+      PathPart: start
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/managed-sessions/start
+  apiMethodVehicleManagedSessionStart:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping:  !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"pin\": \"$input.json('pin')\","
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle Managed Session - Start
+        ParentResourceId: !Ref apiResourceVehicleManagedSessionStart
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/managed-sessions/start
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"managed_session_start\","
+            - "\t\"output\": {"
+            - "\t\t\"id\": \"id\","
+            - "\t\t\"pin\": \"pin\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"update_shadow_document\""
+            - "}"
+
+  # /v1/vehicles/{vin}/model-releases
+  apiResourceVehicleModelReleases:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: model-releases
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/{vin}/model-releases/{model-release-id}
+  apiResourceVehicleModelRelease:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleModelReleases
+      PathPart: "{model-release-id}"
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/model-releases/{model_release-id}
+  apiMethodVehicleModelReleaseSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"model_release_id\": $input.params('model-release-id'),"
+            - "\"vin\": \"$input.params('vin')\","
+        HttpMethod: POST
+        LambdaName: vehicles_vehicle_model_release_set
+        OperationName: Vehicle Model Release - Set
+        ParentResourceId: !Ref apiResourceVehicleModelRelease
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/model-releases/*
+
+  # /v1/vehicles/{vin}/notes
+  apiResourceVehicleNotes:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: notes
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/notes
+  apiMethodVehicleNotesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+        - "\n"
+        - - "\"object_id\" : \"$input.params('vin')\","
+          - "\"object_type\": \"Vehicle\","
+        LambdaName: notes_get
+        OperationName: Vehicle Notes - Get
+        ParentResourceId: !Ref apiResourceVehicleNotes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/notes
+
+  # POST/v1/vehicles/{vin}/notes
+  apiMethodVehicleNoteCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"object_id\" : \"$input.params('vin')\","
+            - "\"tags\" : $input.json('tags'),"
+            - "\"object_type\" : \"Vehicle\","
+            - "\"content\" : $input.json('content'),"
+            - "\"body\" : $input.json('$'),"
+            - "\"author\": \"$context.authorizer.claims.sub\","
+        HttpMethod: POST
+        LambdaName: note_create
+        OperationName: Vehicle Note - Create
+        ParentResourceId: !Ref apiResourceVehicleNotes
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/notes
+
+  # /v1/vehicles/{vin}/parts
+  apiResourceVehicleParts:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: parts
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/parts
+  apiMethodVehiclePartSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\" : \"$input.params('vin')\","
+            - "\"part_type\" : $input.json('part_type'),"
+            - "\"part_number\" : $input.json('part_number'),"
+        HttpMethod: POST
+        LambdaName: vehicles_vehicle_part_set
+        OperationName: Vehicle Part - Set
+        ParentResourceId: !Ref apiResourceVehicleParts
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/parts
+
+  # /v1/vehicles/{vin}/recalls
+  apiResourceVehicleRecalls:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: recalls
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/recalls
+  apiMethodVehicleRecallsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: recall_list_vehicle
+        OperationName: Vehicle Recalls - List
+        ParentResourceId: !Ref apiResourceVehicleRecalls
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/recalls
+
+  # /v1/vehicles/{vin}/synchronized
+  apiResourceVehicleSynchronized:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: synchronized
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/vehicles/{vin}/synchronized
+  apiMethodVehicleSynchronizedGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"vin\" : \"$input.params('vin')\","
+        LambdaName: vehicles_vehicle_shadow_synchronized
+        OperationName: Vehicle Synchonized - Get
+        ParentResourceId: !Ref apiResourceVehicleSynchronized
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/vehicles/*/synchronized
+
+  # /v1/vehicles/{vin}/telemetry
+  apiResourceVehicleTelemetry:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: telemetry
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/telemetry
+  apiMethodVehicleTelemetrySetPoints:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"telemetry_points\": $input.json('$')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Vehicle Telemetry - Set Points
+        ParentResourceId: !Ref apiResourceVehicleTelemetry
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/telemetry
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"set_telemetry_points\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"provision_grafana_vehicle\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"update_shadow_document\""
+            - "}"
+
+  # /v1/vehicles/{vin}/telemetry/backfill
+  apiResourceVehicleTelemetryBackfill:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleTelemetry
+      PathPart: backfill
+      RestApiId: !Ref RestApiId
+
+  # /v1/vehicles/{vin}/telemetry/backfill/presign-upload
+  apiResourceVehicleTelemetryBackfillPreSignUpload:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleTelemetryBackfill
+      PathPart: presign-upload
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/telemetry/backfill/presign-upload
+  apiMethodVehicleTelemetryBackfillPreSignUpload:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"file_name\": $input.json('file_name'),"
+        HttpMethod: POST
+        LambdaName: backfill_s3_presigned_url_generate
+        OperationName: Vehicle Telemetry Backfill - Presign Upload
+        ParentResourceId: !Ref apiResourceVehicleTelemetryBackfillPreSignUpload
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/telemetry/backfill/presign-upload
+
+  # /v1/vehicles/{vin}/telemetry/backfill/process
+  apiResourceVehicleTelemetryBackfillProcess:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicleTelemetryBackfill
+      PathPart: process
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/telemetry/backfill/process
+  apiMethodVehicleTelemetryBackfillProcess:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vin\": \"$input.params('vin')\","
+            - "\"file_name\": $input.json('file_name'),"
+            - "\"file_length\": $input.json('file_length'),"
+        HttpMethod: POST
+        LambdaName: backfill_state_machine_start
+        OperationName: Vehicle Telemetry Backfill - Process
+        ParentResourceId: !Ref apiResourceVehicleTelemetryBackfillProcess
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/vehicles/*/telemetry/backfill/process
+
+  # /v1/vehicles/{vin}/token
+  apiResourceVehicleToken:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceVehicle
+      PathPart: token
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/vehicles/{vin}/token
+  # doesn't use nested template due having custom responses
+  apiMethodVehicleTokenSign:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Vehicle - Sign Token
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizerId
+      HttpMethod: POST
+      ResourceId: !Ref apiResourceVehicleToken
+      RestApiId: !Ref RestApiId
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: "200"
+          # SelectionPattern: String # regex to match for errors, leave out for 200 (default) code
+          - StatusCode: "400"
+            SelectionPattern: !Join 
+              - "|"
+              - - "(.*Input validation failed.*)"
+                - "(.*vin must be present in token.*)"
+          - StatusCode: "401"
+            SelectionPattern: "(.*Unauthorized.*)"
+          - StatusCode: "403"
+            SelectionPattern: "(.*does not control.*)"
+          - StatusCode: "404"
+            SelectionPattern: !Join 
+              - "|"
+              - - "(.*does not exist.*)"
+                - "(.*No match.*)"
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestTemplates: 
+          "application/json" : !Join
+            - "\n"
+            - - "#set($allParams = $input.params())"
+              - "{"
+              - "\"body-json\": $input.json('$'),"
+              - "\"id\": $input.json('authority_id'),"
+              - "\"token\": $input.json('token'),"
+              - "\"params\": {"
+              - "#foreach($type in $allParams.keySet())"
+              - "\t#set($params = $allParams.get($type))"
+              - "\"$type\": {"
+              - "\t#foreach($paramName in $params.keySet())"
+              - "\t\"$paramName\": \"$util.escapeJavaScript($params.get($paramName))\""
+              - "\t\t#if($foreach.hasNext),#end"
+              - "\t#end"
+              - "}"
+              - "\t#if($foreach.hasNext),#end"
+              - "#end"
+              - "}"
+              - "}"
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${lambdaAlias}/invocations
+          - lambdaAlias: !Join 
+            - ""
+            - - "${stageVariables.func_"
+              - sign_vehicle_token
+              - "}"
+      MethodResponses:
+        - ResponseModels: 
+            "application/json" : Empty
+          StatusCode: "200"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "400"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "401"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "403"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "404"
+
+  # POST/v1/vehicles/{vin}/token
+  # lambda invoke permissions for all ENVs
+  lambdaApiGatewayInvokeVehicleTokenSign:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/lambda_invoke_envs.yml
+      Parameters:
+        RestApiId: !Ref RestApiId
+        LambdaName: sign_vehicle_token
+        Route: POST/v1/vehicles/*/token

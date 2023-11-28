@@ -1,0 +1,554 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Recalls Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/recalls
+  apiResourceRecalls:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: recalls
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/recalls
+  apiMethodRecallsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: recall_list
+        OperationName: Recalls - List
+        ParentResourceId: !Ref apiResourceRecalls
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls
+
+  # POST/v1/recalls
+  apiMethodRecallCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"title\": $input.json('title'),"
+            - "\"description\": $input.json('description'),"
+            - "\"nhtsa_number\": $input.json('nhtsa_number'),"
+            - "\"date\": $input.json('date'),"
+            - "\"mfr_campaign_id\": $input.json('mfr_campaign_id'),"
+            - "\"country\": $input.json('country'),"
+            - "\"safety_recall\": $input.json('safety_recall'),"
+            - "\"safety_description\": $input.json('safety_description')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Create
+        ParentResourceId: !Ref apiResourceRecalls
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_create\","
+            - "\t\"output\":{"
+            - "\t\t\"id\": \"id\","
+            - "\t\t\"title\": \"title\","
+            - "\t\t\"description\": \"description\","
+            - "\t\t\"nhtsa_number\": \"nhtsa_number\","
+            - "\t\t\"date\": \"date\","
+            - "\t\t\"mfr_campaign_id\": \"mfr_campaign_id\","
+            - "\t\t\"country\": \"country\","
+            - "\t\t\"safety_recall\": \"safety_recall\","
+            - "\t\t\"safety_description\": \"safety_description\","
+            - "\t\t\"remedy_id\": \"remedy_id\","
+            - "\t\t\"status\": \"status\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/date
+  apiResourceRecallsDate:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecalls
+      PathPart: date
+      RestApiId: !Ref RestApiId
+
+  # /v1/recalls/date/initial
+  apiResourceRecallsDateInitial:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallsDate
+      PathPart: initial
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/recalls/date/initial
+  apiMethodRecallsDateInitialGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"first\" : true,"
+        LambdaName: recall_get_updated
+        OperationName: Recalls Get Update - Initial
+        ParentResourceId: !Ref apiResourceRecallsDateInitial
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/date/initial
+
+  # /v1/recalls/date/updated
+  apiResourceRecallsDateUpdated:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallsDate
+      PathPart: updated
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/recalls/date/updated
+  apiMethodRecallsDateUpdatedGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"last\" : true,"
+        LambdaName: recall_get_updated
+        OperationName: Recalls Get Update - Last
+        ParentResourceId: !Ref apiResourceRecallsDateUpdated
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/date/updated
+
+  # POST/v1/recalls/date/updated
+  apiMethodRecallsDateUpdatedSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        HttpMethod: POST
+        LambdaName: recall_set_updated
+        OperationName: Recalls - Set Updated
+        ParentResourceId: !Ref apiResourceRecallsDateUpdated
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls/date/updated
+
+  # /v1/recalls/date/{update-id}
+  apiResourceRecallsDateUpdate:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallsDate
+      PathPart: "{update-id}"
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/recalls/date/{update-id}
+  apiMethodRecallsDateUpdateGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\" : $input.params('update-id'),"
+        LambdaName: recall_get_updated
+        OperationName: Recalls Update - Get
+        ParentResourceId: !Ref apiResourceRecallsDateUpdate
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/date/*
+
+  # /v1/recalls/remedies
+  apiResourceRecallsRemedies:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecalls
+      PathPart: remedies
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/recalls/remedies
+  apiMethodRecallsRemediesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: remedy_list
+        OperationName: Recall Remedies - List
+        ParentResourceId: !Ref apiResourceRecallsRemedies
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/remedies
+
+  # /v1/recalls/remedies/{remedy-id}
+  apiResourceRecallsRemedy:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallsRemedies
+      PathPart: "{remedy-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/recalls/remedies/{remedy-id}
+  apiMethodRecallsRemedyDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"remedy_id\": $input.params('remedy-id')"
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Recalls - Remedy Delete
+        ParentResourceId: !Ref apiResourceRecallsRemedy
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/recalls/remedies/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"remedy_delete\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # GET/v1/recalls/remedies/{remedy-id}
+  apiMethodRecallsRemedyGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: remedy_get
+        OperationName: Recalls - Remedy Get
+        ParentResourceId: !Ref apiResourceRecallsRemedy
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/remedies/*
+
+  # POST/v1/recalls/remedies/{remedy-id}
+  apiMethodRecallsRemedyEdit:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"remedy_id\": $input.params('remedy-id'),"
+            - "\"date\": $input.json('date'),"
+            - "\"description\": $input.json('description')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Recalls - Remedy Edit
+        ParentResourceId: !Ref apiResourceRecallsRemedy
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls/remedies/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"remedy_edit\","
+            - "\t\"output\":{"
+            - "\t\t\"remedy_id\": \"remedy_id\","
+            - "\t\t\"date\": \"date\","
+            - "\t\t\"description\": \"description\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/{recall-id}
+  apiResourceRecall:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecalls
+      PathPart: "{recall-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/recalls/{recall-id}
+  apiMethodRecallDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"recall_id\": $input.params('recall-id')"
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Delete
+        ParentResourceId: !Ref apiResourceRecall
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/recalls/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_delete\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # GET/v1/recall/{recall-id}
+  apiMethodRecallGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"recall_id\" : $input.params('recall-id'),"
+            - "\"get_additional_data\": true,"
+        LambdaName: recall_get
+        OperationName: Recall - Get
+        ParentResourceId: !Ref apiResourceRecall
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/*
+
+  # POST/v1/recalls/{recall-id}
+  apiMethodRecallEdit:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"title\": $input.json('title'),"
+            - "\"description\": $input.json('description'),"
+            - "\"nhtsa_number\": $input.json('nhtsa_number'),"
+            - "\"date\": $input.json('date'),"
+            - "\"mfr_campaign_id\": $input.json('mfr_campaign_id'),"
+            - "\"country\": $input.json('country'),"
+            - "\"safety_recall\": $input.json('safety_recall'),"
+            - "\"safety_description\": $input.json('safety_description'),"
+            - "\"remedy_id\": $input.json('remedy_id'),"
+            - "\"status\": $input.json('status')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Edit
+        ParentResourceId: !Ref apiResourceRecall
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_edit\","
+            - "\t\"output\":{"
+            - "\t\t\"recall_id\": \"recall_id\","
+            - "\t\t\"title\": \"title\","
+            - "\t\t\"description\": \"description\","
+            - "\t\t\"nhtsa_number\": \"nhtsa_number\","
+            - "\t\t\"date\": \"date\","
+            - "\t\t\"mfr_campaign_id\": \"mfr_campaign_id\","
+            - "\t\t\"country\": \"country\","
+            - "\t\t\"safety_recall\": \"safety_recall\","
+            - "\t\t\"safety_description\": \"safety_description\","
+            - "\t\t\"remedy_id\": \"remedy_id\","
+            - "\t\t\"status\": \"status\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/{recall-id}/remedy
+  apiResourceRecallRemedy:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecall
+      PathPart: remedy
+      RestApiId: !Ref RestApiId
+
+  # PUT/v1/recalls/{recall-id}/remedy
+  apiMethodRecallsRemedyCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"description\": $input.json('description')"
+        HttpMethod: PUT
+        LambdaName: step_wrapper_palantir
+        OperationName: Recalls - Remedy Create
+        ParentResourceId: !Ref apiResourceRecallRemedy
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/recalls/*/remedy
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"remedy_create\","
+            - "\t\"output\":{"
+            - "\t\t\"remedy_id\": \"remedy_id\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/{recall-id}/vehicles
+  apiResourceRecallVehicles:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecall
+      PathPart: vehicles
+      RestApiId: !Ref RestApiId
+
+  # PUT/v1/recalls/{recall-id}/vehicles
+  apiMethodRecallAddVehicles:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"vins\": $input.json('vins'),"
+            - "\"service_reference\": $input.json('service_reference')"
+        HttpMethod: PUT
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Add Vehicles
+        ParentResourceId: !Ref apiResourceRecallVehicles
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/recalls/*/vehicles
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_add_vehicle\","
+            - "\t\"output\":{"
+            - "\t\t\"vehicle_recall_ids\": \"vehicle_recall_ids\","
+            - "\t\t\"vins\": \"vins\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/{recall-id}/vehicles/service
+  apiResourceRecallVehiclesService:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallVehicles
+      PathPart: service
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/recalls/{recall-id}/vehicles/service
+  apiMethodRecallVehiclesService:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"vins\": $input.json('vins'),"
+            - "\"service_reference\": $input.json('$.service_reference'),"
+            - "\"service_date\": #if($input.json('$.service_date') == \"\")null#else$input.json('$.service_date')#end"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Service Vehicles
+        ParentResourceId: !Ref apiResourceRecallVehiclesService
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls/*/vehicles/service
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_service_vehicle\","
+            - "\t\"output\":{"
+            - "\t\t\"vehicle_service_records\": \"vehicle_service_records\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # /v1/recalls/{recall-id}/vehicles/{vin}
+  apiResourceRecallVehicle:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceRecallVehicles
+      PathPart: "{vin}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/recalls/{recall-id}/vehicles/{vin}
+  apiMethodRecallRemoveVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"vin\": \"$input.params('vin')\""
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Remove Vehicle
+        ParentResourceId: !Ref apiResourceRecallVehicle
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/recalls/*/vehicles/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_remove_vehicle\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+
+  # GET/v1/recall/{recall-id}/vehicles/{vin}
+  apiMethodRecallVehicleGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+            - "\n"
+            - - "\"recall_id\" : $input.params('recall-id'),"
+              - "\"vin\": \"$input.params('vin')\","
+        LambdaName: recall_get_vehicle
+        OperationName: Recall - Get Vehicle
+        ParentResourceId: !Ref apiResourceRecallVehicle
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/recalls/*/vehicles/*
+
+  # POST/v1/recalls/{recall-id}/vehicles/{vin}
+  apiMethodRecallEditVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"recall_id\": $input.params('recall-id'),"
+            - "\"vin\": \"$input.params('vin')\","
+            - "\"id\": $input.json('vehicle_recall_id'),"
+            - "\"service_date\": $input.json('service_date'),"
+            - "\"service_reference\": $input.json('service_reference')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Recall - Edit Vehicle
+        ParentResourceId: !Ref apiResourceRecallVehicle
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/recalls/*/vehicles/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"recall_edit_vehicle\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"recall_set_updated\""
+            - "}"
+

@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Method to invoke lambda with GET and invoke permissions for all ENVs
+
+Parameters:
+  AuthorizerId: 
+    Type: String
+  Custom403Response:
+    Type: String
+    Default: ""
+    Description: Manually escaped regex string (selection pattern) that maps responses to 403
+  CustomParametersMapping:
+    Type: String
+    Default: ""
+    Description: Manually escaped JSON string that maps parameters from querystring, path, etc. to variables
+  HttpMethod: 
+    Type: String
+    Default: GET
+  LambdaName: 
+    Type: String
+  OperationName: 
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+  Route: 
+    Type: String
+  StepWrapperAtoms:
+    Type: String
+    Default: ""
+    Description: Manually escaped JSON string containing step_wrapper atoms as objects. 
+
+Conditions:
+  HasCustom403Response: !Not [!Equals [!Ref Custom403Response, ""]]
+  HasCustomParameters: !Not [!Equals [!Ref CustomParametersMapping, ""]]
+  UsesStepWrapper: !Equals [!Ref LambdaName, step_wrapper_palantir]
+  HasUsernameExistsExceptionError: !Equals [!Ref LambdaName, users_create_user]
+
+Resources:
+  apiGatewayMethodGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: !Ref OperationName
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizerId
+      HttpMethod: !Ref HttpMethod
+      ResourceId: !Ref ParentResourceId
+      RestApiId: !Ref RestApiId
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: "200"
+          # SelectionPattern: String # regex to match for errors, leave out for 200 (default) code
+          - !If
+            - HasCustomParameters
+            - !If 
+              - HasUsernameExistsExceptionError
+              - StatusCode: "400"
+                SelectionPattern: !Join
+                - "|"
+                - - "(.*Input validation failed.*)"
+                  - "(.*UsernameExistsException.*)"
+              - StatusCode: "400"
+                SelectionPattern: "(.*Input validation failed.*)"
+            - !Ref "AWS::NoValue"
+          - StatusCode: "401"
+            SelectionPattern: "(.*Unauthorized.*)"
+          - !If
+            - HasCustom403Response
+            - StatusCode: "403"
+              SelectionPattern: !Ref Custom403Response
+            - !Ref "AWS::NoValue"
+          - StatusCode: "404"
+            SelectionPattern: "(.*Invalid.*)|(.*does not exist.*)"
+          - StatusCode: "500"
+            SelectionPattern: "(.*Unable.*)"
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestTemplates: 
+          "application/json" : !Join
+            - "\n"
+            - - "#set($allParams = $input.params())"
+              - "{"
+              - "\"body-json\" : $input.json('$'),"
+              - !If 
+                - UsesStepWrapper
+                - !Join
+                  - "\n"
+                  - - !Sub "\"atoms\": [\n\t${StepWrapperAtoms}\n],"
+                    - !Sub "\"input\": {"
+                - !Ref "AWS::NoValue"
+              - !If
+                - HasCustomParameters
+                - !Ref CustomParametersMapping
+                - !Ref "AWS::NoValue"
+              - !If 
+                - UsesStepWrapper
+                - "},"
+                - !Ref "AWS::NoValue"
+              - "\"params\" : {"
+              - "#foreach($type in $allParams.keySet())"
+              - "\t#set($params = $allParams.get($type))"
+              - "\"$type\" : {"
+              - "\t#foreach($paramName in $params.keySet())"
+              - "\t\"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\""
+              - "\t\t#if($foreach.hasNext),#end"
+              - "\t#end"
+              - "}"
+              - "\t#if($foreach.hasNext),#end"
+              - "#end"
+              - "}"
+              - "}"
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${lambdaAlias}/invocations
+          - lambdaAlias: !Join 
+            - ""
+            - - "${stageVariables.func_"
+              - !Ref LambdaName
+              - "}"
+      MethodResponses:
+        - ResponseModels: 
+            "application/json" : Empty
+          StatusCode: "200"
+        - !If
+            - HasCustomParameters
+            - ResponseModels: 
+                "application/json" : Error
+              StatusCode: "400"
+            - !Ref "AWS::NoValue"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "401"
+        - !If
+            - HasCustom403Response
+            - ResponseModels: 
+                "application/json" : Error
+              StatusCode: "403"
+            - !Ref "AWS::NoValue"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "404"
+        - ResponseModels: 
+            "application/json" : Error
+          StatusCode: "500"
+
+  # lambda invoke permissions for all ENVs
+  lambdaApiGatewayInvoke:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/lambda_invoke_envs.yml
+      Parameters:
+        RestApiId: !Ref RestApiId
+        LambdaName: !Ref LambdaName
+        Route: !Ref Route

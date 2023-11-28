@@ -1,0 +1,232 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Permissions Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/permissions
+  apiResourcePermissions:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: permissions
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/permissions
+  apiMethodPermissionsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_permissions_list
+        OperationName: Permissions - List
+        ParentResourceId: !Ref apiResourcePermissions
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/permissions
+
+  # /v1/permission-groups
+  apiResourcePermissionGroups:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: permission-groups
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/permission-groups
+  apiMethodPermissionGroupsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: users_groups_list
+        OperationName: Permission Groups - List
+        ParentResourceId: !Ref apiResourcePermissionGroups
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/permission-groups
+
+  # POST/v1/permission-groups
+  apiMethodPermissionGroupCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"name\" : $input.json('$.name'),"
+        HttpMethod: POST
+        LambdaName: users_group_create
+        OperationName: Permission Group - Create
+        ParentResourceId: !Ref apiResourcePermissionGroups
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/permission-groups
+
+  # /v1/permission-groups/{group-id}
+  apiResourcePermissionGroup:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourcePermissionGroups
+      PathPart: "{group-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/permission-groups/{group-id}
+  apiMethodPermissionGroupDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\":$input.params('group-id'),"
+        HttpMethod: DELETE
+        LambdaName: users_group_delete
+        OperationName: Permission Group - Delete
+        ParentResourceId: !Ref apiResourcePermissionGroup
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/permission-groups/*
+
+  # GET/v1/permission-groups/{group-id}
+  apiMethodPermissionGroupGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\" : $input.params('group-id'),"
+        LambdaName: users_group_get
+        OperationName: Permission Group - Get
+        ParentResourceId: !Ref apiResourcePermissionGroup
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/permission-groups/*
+
+  # /v1/permission-groups/{group-id}/permissions
+  apiResourcePermissionGroupPermissions:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourcePermissionGroup
+      PathPart: permissions
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/permission-groups/{group-id}/permissions
+  apiMethodPermissionGroupPermissionRemove:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\":$input.params('group-id'),"
+            - "\"permission\":$input.json('permission'),"
+            - "\"resource\":$input.json('resource'),"
+        HttpMethod: POST
+        LambdaName: users_remove_permission_from_group
+        OperationName: Permission Group - Remove Permission
+        ParentResourceId: !Ref apiResourcePermissionGroupPermissions
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/permission-groups/*/permissions
+
+  # GET/v1/permission-groups/{group-id}/permissions
+  apiMethodPermissionGroupPermissionsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\":$input.params('group-id'),"
+        HttpMethod: GET
+        LambdaName: users_permissions_list
+        OperationName: Permission Group - List Permissions
+        ParentResourceId: !Ref apiResourcePermissionGroupPermissions
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/permission-groups/*/permissions
+
+  # PUT/v1/permission-groups/{group-id}/permissions
+  apiMethodPermissionGroupPermissionAdd:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\":$input.params('group-id'),"
+            - "\"permission\":$input.json('permission'),"
+            - "\"resource\":$input.json('resource'),"
+        HttpMethod: PUT
+        LambdaName: users_add_permission_to_group
+        OperationName: Permission Group - Add Permission
+        ParentResourceId: !Ref apiResourcePermissionGroupPermissions
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/permission-groups/*/permissions
+
+  # /v1/permission-groups/{group-id}/users
+  apiResourcePermissionGroupUsers:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourcePermissionGroup
+      PathPart: users
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/permission-groups/{group-id}/users
+  apiMethodUsersPermissionGroupUsersGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\" : $input.params('group-id'),"
+        LambdaName: users_users_list
+        OperationName: Permission Group - List Users
+        ParentResourceId: !Ref apiResourcePermissionGroupUsers
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/permission-groups/*/users
+
+  # /v1/permission-groups/{group-id}/users/{username}
+  apiResourcePermissionGroupUser:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourcePermissionGroupUsers
+      PathPart: "{username}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/permission-groups/{group-id}/users/{username}
+  apiMethodPermissionGroupUserRemove:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\":$input.params('group-id'),"
+            - "\"username\":\"$input.params('username')\","
+        HttpMethod: DELETE
+        LambdaName: users_remove_user_from_group
+        OperationName: Permission Group - Remove User
+        ParentResourceId: !Ref apiResourcePermissionGroupUser
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/permission-groups/*/users/*
+
+  # PUT/v1/permission-groups/{group-id}/users/{username}
+  apiMethodUsersPermissionGroupUserAdd:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\":$input.params('group-id'),"
+            - "\"username\":\"$input.params('username')\","
+        HttpMethod: PUT
+        LambdaName: users_add_user_to_group
+        OperationName: Permission Group - Add User
+        ParentResourceId: !Ref apiResourcePermissionGroupUser
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/permission-groups/*/users/*

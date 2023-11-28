@@ -1,0 +1,411 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Fleets (Vehicle Groups) Section of Palantir API
+
+Parameters:
+  AuthorizerId:
+    Type: String
+  ParentResourceId: 
+    Type: String
+  RestApiId: 
+    Type: String
+
+Resources:
+  # /v1/fleets
+  apiResourceFleets:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref ParentResourceId
+      PathPart: fleets
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/fleets
+  apiMethodFleetsList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: list_vehicle_groups
+        OperationName: Fleets - List
+        ParentResourceId: !Ref apiResourceFleets
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/fleets
+
+  # POST/v1/fleets
+  apiMethodFleetCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group\":$input.json('group')"
+        HttpMethod: POST
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Create
+        ParentResourceId: !Ref apiResourceFleets
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\": \"create_vehicle_group\","
+            - "\t\"reverse\": \"delete_vehicle_group\","
+            - "\t\"output\":{"
+            - "\t\t\"id\": \"group_id\""
+            - "\t}"
+            - "},"
+            - "{"
+            - "\t\"lambda\": \"provision_grafana_groups\""
+            - "},"
+            - "{"
+            - "\t\"lambda\": \"provision_grafana_overview\""
+            - "}"
+
+  # /v1/fleets/{fleet-id}
+  apiResourceFleet:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleets
+      PathPart: "{fleet-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/fleets/{fleet-id}
+  apiMethodFleetDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\":$input.params('fleet-id')"
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Delete
+        ParentResourceId: !Ref apiResourceFleet
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/fleets/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\": \"delete_vehicle_group\","
+            - "\t\"output\":{}"
+            - "},"
+            - "{"
+            - "\t\"lambda\": \"provision_grafana_groups\""
+            - "}"
+
+  # GET/v1/fleets/{fleet-id}
+  apiMethodFleetGet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"group_id\" : $input.params('fleet-id'),"
+        LambdaName: get_vehicle_group
+        OperationName: Fleet - Get
+        ParentResourceId: !Ref apiResourceFleet
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/fleets/*
+
+  # POST/v1/fleets/{fleet-id}
+  apiMethodFleetUpdate:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"id\": $input.params('fleet-id'),"
+            - "\"fleet_name\": $input.json('fleet_name'),"
+        HttpMethod: POST
+        LambdaName: fleets_fleet_update
+        OperationName: Fleet - Update Name
+        ParentResourceId: !Ref apiResourceFleet
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets/*
+
+  # /v1/fleets/{fleet-id}/location
+  apiResourceFleetLocation:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleet
+      PathPart: location
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/fleets/{fleet-id}/location
+  apiMethodFleetLocationSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vehicle_group_id\": $input.params('fleet-id'),"
+            - "\"location_id\": $input.json('location_id'),"
+        HttpMethod: POST
+        LambdaName: fleets_vehicle_group_location_set
+        OperationName: Fleet - Location Type
+        ParentResourceId: !Ref apiResourceFleetLocation
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets/*/location
+
+  # /v1/fleets/{fleet-id}/type
+  apiResourceFleetType:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleet
+      PathPart: type
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/fleets/{fleet-id}/type
+  apiMethodFleetTypeSet:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vehicle_group_id\": $input.params('fleet-id'),"
+            - "\"type_id\": $input.json('type_id'),"
+        HttpMethod: POST
+        LambdaName: fleets_vehicle_group_type_set
+        OperationName: Fleet - Set Type
+        ParentResourceId: !Ref apiResourceFleetType
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets/*/type
+
+  # /v1/fleets/{fleet-id}/users
+  apiResourceFleetUsers:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleet
+      PathPart: users
+      RestApiId: !Ref RestApiId
+
+  # /v1/fleets/{fleet-id}/users/{username}
+  apiResourceFleetUser:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleetUsers
+      PathPart: "{username}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/fleets/{fleet-id}/users/{username}
+  apiMethodFleetUserRemove:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vehicle_group_id\": $input.params('fleet-id'),"
+            - "\"username\" : \"$input.params('username')\","
+        HttpMethod: DELETE
+        LambdaName: fleets_vehicle_group_remove_user
+        OperationName: Fleet - Remove User
+        ParentResourceId: !Ref apiResourceFleetUser
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/fleets/*/users/*
+
+  # PUT/v1/fleets/{fleet-id}/users/{username}
+  apiMethodFleetUserAdd:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters: 
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"vehicle_group_id\": $input.params('fleet-id'),"
+            - "\"username\" : \"$input.params('username')\","
+        HttpMethod: PUT
+        LambdaName: fleets_vehicle_group_add_user
+        OperationName: Fleet - Add User
+        ParentResourceId: !Ref apiResourceFleetUser
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/fleets/*/users/*
+
+  # /v1/fleets/{fleet-id}/vehicles
+  apiResourceFleetVehicles:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleet
+      PathPart: vehicles
+      RestApiId: !Ref RestApiId
+
+  # /v1/fleets/{fleet-id}/vehicles/{vin}
+  apiResourceFleetVehicle:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleetVehicles
+      PathPart: "{vin}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/fleets/{fleet-id}/vehicles/{vin}
+  apiMethodFleetRemoveVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        Custom403Response: "(.*Vehicles cannot be removed from .* group.*)"
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\": $input.params('fleet-id'),"
+            - "\"vin\": \"$input.params('vin')\""
+        HttpMethod: DELETE
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Remove Vehicle
+        ParentResourceId: !Ref apiResourceFleetVehicle
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/fleets/*/vehicles/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"remove_vehicle_from_group\","
+            - "\t\"reverse\":\"add_vehicle_to_group\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"provision_grafana_overview\""
+            - "}"
+
+  # PUT/v1/fleets/{fleet-id}/vehicles/{vin}
+  apiMethodFleetAddVehicle:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        Custom403Response: "(.*Vehicles cannot be removed from .* group.*)"
+        CustomParametersMapping: !Join 
+          - "\n"
+          - - "\"group_id\": $input.params('fleet-id'),"
+            - "\"vin\": \"$input.params('vin')\""
+        HttpMethod: PUT
+        LambdaName: step_wrapper_palantir
+        OperationName: Fleet - Add Vehicle
+        ParentResourceId: !Ref apiResourceFleetVehicle
+        RestApiId: !Ref RestApiId
+        Route: PUT/v1/fleets/*/vehicles/*
+        StepWrapperAtoms: !Join
+          - "\n"
+          - - "{"
+            - "\t\"lambda\":\"add_vehicle_to_group\","
+            - "\t\"reverse\":\"remove_vehicle_from_group\""
+            - "},"
+            - "{"
+            - "\t\"lambda\":\"provision_grafana_overview\""
+            - "}"
+
+  # /v1/fleets/{fleet-id}/department-code
+  apiResourceFleetDepartmentCode:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceFleet
+      PathPart: department-code
+      RestApiId: !Ref RestApiId
+
+  # POST/v1/fleets/{fleet-id}/department-code
+  apiMethodFleetDepartmentCodeSet:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"vehicle_group_id\": $input.params('fleet-id'),"
+            - "\"accounting_department_code_id\": $input.json('accounting_department_code_id'),"
+        HttpMethod: POST
+        LambdaName: fleets_vehicle_group_accounting_department_code_set
+        OperationName: Fleet - Set Accounting Department Code
+        ParentResourceId: !Ref apiResourceFleetDepartmentCode
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets/*/department-code
+
+  # /v1/fleets/types
+  apiResourceFleetsTypes:
+    Type: AWS::ApiGateway::Resource
+    Properties: 
+      ParentId: !Ref apiResourceFleets
+      PathPart: types
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/fleets/types
+  apiMethodFleetsTypesList:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: fleets_vehicle_group_types_list
+        OperationName: Fleets - List Types
+        ParentResourceId: !Ref apiResourceFleetsTypes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/fleets/types
+
+  # /v1/fleets/department-codes
+  apiResourceFleetsDepartmentCodes:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceFleets
+      PathPart: department-codes
+      RestApiId: !Ref RestApiId
+
+  # GET/v1/fleets/department-codes
+  apiMethodFleetsDepartmentCodesList:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        LambdaName: fleets_accounting_department_codes_list
+        OperationName: Fleets - List Accounting Department Codes
+        ParentResourceId: !Ref apiResourceFleetsDepartmentCodes
+        RestApiId: !Ref RestApiId
+        Route: GET/v1/fleets/department-codes
+
+  # POST/v1/fleets/department-codes
+  apiMethodFleetsDepartmentCodesCreate:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: !Join
+          - "\n"
+          - - "\"code\": $input.json('code'),"
+            - "\"description\": $input.json('description'),"
+        HttpMethod: POST
+        LambdaName: fleets_accounting_department_code_create
+        OperationName: Fleets - Accounting Department Code Create
+        ParentResourceId: !Ref apiResourceFleetsDepartmentCodes
+        RestApiId: !Ref RestApiId
+        Route: POST/v1/fleets/department-codes
+
+  # /v1/fleets/department-codes/{department-id}
+  apiResourceFleetsDepartmentCodesDepartment:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref apiResourceFleetsDepartmentCodes
+      PathPart: "{department-id}"
+      RestApiId: !Ref RestApiId
+
+  # DELETE/v1/fleets/department-codes/{department-id}
+  apiMethodFleetsDepartmentCodesDepartmentDelete:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/arcimoto-cloudformation/palantir-api/method.yml
+      Parameters:
+        AuthorizerId: !Ref AuthorizerId
+        CustomParametersMapping: "\"id\":$input.params('department-id'),"
+        HttpMethod: DELETE
+        LambdaName: fleets_accounting_department_code_delete
+        OperationName: Fleet Accounting Department Code - Delete
+        ParentResourceId: !Ref apiResourceFleetsDepartmentCodesDepartment
+        RestApiId: !Ref RestApiId
+        Route: DELETE/v1/fleets/department-codes/*

@@ -1,0 +1,150 @@
+image: node:16.13.0
+
+definitions:
+  steps:
+    - step: &build-env-version
+        name: Build App - ENV Version
+        caches:
+          - node
+        script:
+          - npm install
+          # allow use of font-awesome pro via our token
+          - FONTAWESOME_NPM_AUTH_TOKEN=${FONTAWESOME_NPM_AUTH_TOKEN} npm install --save @fortawesome/fontawesome-pro
+          - VUE_APP_ENVIRONMENT=${ENV} npm run ${BUILD_COMMAND}
+          - mkdir -p upload/${ENV}/
+          - mv dist/* upload/${ENV}
+        artifacts:
+          - upload/**
+    - step: &deploy
+        name: Deploy to S3
+        script:
+          - pipe: atlassian/aws-s3-deploy:0.3.8
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: us-west-2
+              S3_BUCKET: arcimoto-palantir
+              LOCAL_PATH: upload
+    - step: &email-deploy-completion
+        name: Deploy Completion Email
+        script:
+          - email=$(git log --format='%ae' ${BITBUCKET_COMMIT}^!)
+          - BB_LINK="https://bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO_SLUG}/"
+          - HEADER="#Palantir Deploy to ${ENV} Complete"
+          - CONTENT="The pipeline for the [palantir](${BB_LINK}) repo has completed deploying the app."
+          - LINK="- [Palantir ${ENV} Version](${APP_LINK})"
+          - BUILD_LINK="- [Pipeline Execution ${BITBUCKET_BUILD_NUMBER}](${BB_LINK}/addon/pipelines/home#!/results/${BITBUCKET_BUILD_NUMBER})"
+          - printf "$HEADER\n\n$CONTENT\n\n$LINK\n$BUILD_LINK" | docker run -i datafolklabs/markdown > email_body.html
+          - pipe: atlassian/email-notify:0.4.5
+            variables:
+              USERNAME: $SES_SMTP_USERNAME
+              PASSWORD: $SES_SMTP_PASSWORD
+              FROM: no-reply@arcimoto.com
+              TO: $email
+              SUBJECT: Palantir - $ENV Deploy Complete
+              HOST: email-smtp.us-west-2.amazonaws.com
+              BODY_HTML: email_body.html
+    - step: &email-release-notification
+        name: Release Notify Email
+        script:
+          - version=$(node -pe "require('./package.json').version")
+          - HEADER="#Palantir Release Complete - ${version}"
+          - CONTENT="A new version of Palantir (${version}) has been released. This new release is available at the normal Palantir URL, included below."
+          - LINK="- [Palantir ${version}](${APP_LINK})"
+          - printf "$HEADER\n\n$CONTENT\n\n$LINK" | docker run -i datafolklabs/markdown > email_body.html
+          - pipe: atlassian/email-notify:0.4.5
+            variables:
+              USERNAME: $SES_SMTP_USERNAME
+              PASSWORD: $SES_SMTP_PASSWORD
+              FROM: no-reply@arcimoto.com
+              TO: palantir-pilot@arcimoto.com
+              SUBJECT: Palantir New Release - ${version}
+              HOST: email-smtp.us-west-2.amazonaws.com
+              BODY_HTML: email_body.html
+              ATTACHMENTS: CHANGELOG.md
+    - step: &email-tests-completion
+        name: Tests Completion Email
+        script:
+          - email=$(git log --format='%ae' ${BITBUCKET_COMMIT}^!)
+          - BB_LINK="https://bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO_SLUG}/"
+          - HEADER="#Palantir App Build Tests Complete"
+          - CONTENT="The pipeline running tests for the [palantir](${BB_LINK}) repo has completed."
+          - BUILD_LINK="- [Pipeline Execution ${BITBUCKET_BUILD_NUMBER}](${BB_LINK}/addon/pipelines/home#!/results/${BITBUCKET_BUILD_NUMBER})"
+          - PR_LINK="- [Pull Request ${BITBUCKET_PR_ID}](${BB_LINK}/pull-requests/${BITBUCKET_PR_ID})"
+          - printf "$HEADER\n\n$CONTENT\n\n$BUILD_LINK\n$PR_LINK" | docker run -i datafolklabs/markdown > email_body.html
+          - pipe: atlassian/email-notify:0.4.5
+            variables:
+              USERNAME: $SES_SMTP_USERNAME
+              PASSWORD: $SES_SMTP_PASSWORD
+              FROM: no-reply@arcimoto.com
+              TO: $email
+              SUBJECT: Palantir - Tests Complete for Pull Request ${BITBUCKET_PR_ID}
+              HOST: email-smtp.us-west-2.amazonaws.com
+              BODY_HTML: email_body.html
+    - step: &update-version
+        name: Update Version
+        caches:
+          - node
+        script:
+          - npm install
+          - npx semantic-release
+        artifacts:
+          - package.json # carrying this to subsequent steps forces any builds onto the new version number
+          - CHANGELOG.md
+
+pipelines:
+  pull-requests:
+    'TEL-*':
+      - step:
+          <<: *build-env-version
+          deployment: Development
+          name: Test Build App - development build
+      - step:
+          <<: *build-env-version
+          deployment: Production
+          name: Test Build App - production build
+      - step:
+          <<: *email-tests-completion
+          deployment: ProductionEmail
+  branches:
+    dev:
+      - step:
+          deployment: Development
+          <<: *build-env-version
+          name: Build App - Dev ENV
+      - step: *deploy
+      - step:
+          <<: *email-deploy-completion
+          deployment: DevelopmentEmail
+    staging:
+      - step:
+          deployment: Staging
+          <<: *build-env-version
+          name: Build App - Staging ENV
+      - step: *deploy
+      - step:
+          <<: *email-deploy-completion
+          deployment: StagingEmail
+    master:
+      - step:
+          <<: *update-version
+          deployment: UpdateVersion
+      - step:
+          deployment: Development
+          <<: *build-env-version
+          name: Build App - Dev ENV
+      - step:
+          deployment: Staging
+          <<: *build-env-version
+          name: Build App - Staging ENV
+      - step:
+          deployment: Production
+          <<: *build-env-version
+          name: Build App - Prod ENV
+      - step: *deploy
+      - step:
+          <<: *email-deploy-completion
+          deployment: ProductionEmail
+      - step:
+          <<: *email-release-notification
+          deployment: ReleaseEmail

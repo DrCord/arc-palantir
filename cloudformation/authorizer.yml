@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Api Gateway Authorizer using main Arcimoto user pool by default. Meant to be used as nested stack in API Gateway build.
+
+Parameters:
+  RestApiId: 
+    Type: String
+  UserPoolProviderArns: 
+    Type: CommaDelimitedList
+    Default: arn:aws:cognito-idp:us-west-2:511596272857:userpool/us-west-2_3x5jXoVFD
+
+Resources:
+  apiGatewayAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties: 
+      IdentitySource: method.request.header.Authorization
+      Name: ArcimotoAuthorityUserPool
+      ProviderARNs: !Ref UserPoolProviderArns
+      RestApiId: !Ref RestApiId
+      Type: COGNITO_USER_POOLS
+
+Outputs:
+  apiGatewayAuthorizerId: 
+    Value: !Ref apiGatewayAuthorizer

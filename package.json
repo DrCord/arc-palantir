@@ -1,0 +1,132 @@
+{
+  "name": "palantir",
+  "version": "1.21.3",
+  "private": true,
+  "scripts": {
+    "build": "vue-cli-service build",
+    "builddev": "vue-cli-service build --mode development",
+    "commit": "changed=0 \ngit remote update && git status -uno | grep -q 'Your branch is behind' && changed=1\nif [ $changed = 1 ]; then\n    echo \"***WARNING***\n pull latest\";\nelse\n git-cz\nfi",
+    "lint": "vue-cli-service lint",
+    "proxy": "node ../aws_api_proxy/index.js",
+    "serve": "vue-cli-service lint --fix && vue-cli-service serve"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-pro": "^5.15.4",
+    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/free-brands-svg-icons": "^5.15.4",
+    "@fortawesome/free-regular-svg-icons": "^5.15.4",
+    "@fortawesome/free-solid-svg-icons": "^5.15.4",
+    "@fortawesome/pro-duotone-svg-icons": "^5.15.4",
+    "@fortawesome/pro-light-svg-icons": "^5.15.4",
+    "@fortawesome/pro-regular-svg-icons": "^5.15.4",
+    "@fortawesome/pro-solid-svg-icons": "^5.15.4",
+    "@fortawesome/vue-fontawesome": "^2.0.6",
+    "@vue/babel-preset-app": "^5.0.8",
+    "amazon-cognito-identity-js": "^3.3.3",
+    "axios": "^0.21.1",
+    "bootstrap": "^4.6.0",
+    "bowser": "^2.11.0",
+    "chart.js": "^2.9.4",
+    "core-js": "^3.15.2",
+    "epic-spinners": "^1.1.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.3.1",
+    "eslint-plugin-standard": "^4.1.0",
+    "idle-vue": "^2.0.5",
+    "jquery": "^3.6.0",
+    "jwt-decode": "^2.2.0",
+    "local-storage": "^2.0.0",
+    "lodash": "^4.17.21",
+    "marker-clusterer-plus": "^2.1.4",
+    "node-fetch": "^2.6.1",
+    "popper.js": "^1.16.1",
+    "qrcode": "^1.4.1",
+    "sass": "~1.32.6",
+    "v-clipboard": "^2.2.3",
+    "vin-validator": "^1.0.0",
+    "vue": "^2.6.14",
+    "vue-chartjs": "^3.5.1",
+    "vue-csv-import": "^3.3.10",
+    "vue-form": "^4.10.3",
+    "vue-json-to-csv": "^1.1.8",
+    "vue-masonry": "^0.11.8",
+    "vue-material": "^1.0.0-beta-15",
+    "vue-mobile-detection": "^1.0.0",
+    "vue-moment": "^4.1.0",
+    "vue-router": "^3.5.2",
+    "vue-tel-input": "^5.5.0",
+    "vue-toasted": "^1.1.28",
+    "vue2-google-maps": "^0.10.7",
+    "vuetify": "^2.5.7",
+    "vuex": "^3.6.2"
+  },
+  "devDependencies": {
+    "@saithodev/semantic-release-backmerge": "^2.0.0",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/commit-analyzer": "^9.0.1",
+    "@semantic-release/git": "^10.0.0",
+    "@semantic-release/npm": "^8.0.2",
+    "@semantic-release/release-notes-generator": "^10.0.2",
+    "@vue/cli-plugin-babel": "^4.5.13",
+    "@vue/cli-plugin-eslint": "^4.5.13",
+    "@vue/cli-service": "^4.5.13",
+    "@vue/eslint-config-standard": "^5.1.2",
+    "babel-eslint": "^10.1.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-vue": "^6.2.2",
+    "node-sass": "^6.0.1",
+    "prettier": "^1.19.1",
+    "sass-loader": "^10.1.1",
+    "semantic-release": "^18.0.0",
+    "vue-cli-plugin-vuetify": "^2.4.1",
+    "vue-eslint-parser": "^7.10.0",
+    "vue-template-compiler": "^2.6.14",
+    "vuetify-loader": "^1.7.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "release": {
+    "repositoryUrl": "git@bitbucket.org:arcimotocode1/palantir.git",
+    "branches": [
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/changelog",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "package-lock.json"
+          ],
+          "message": "chore(release): ${nextRelease.version} auto-versioning [skip ci]"
+        }
+      ],
+      [
+        "@saithodev/semantic-release-backmerge",
+        {
+          "branchName": "dev",
+          "clearWorkspace": true
+        }
+      ],
+      [
+        "@saithodev/semantic-release-backmerge",
+        {
+          "branchName": "staging",
+          "clearWorkspace": true
+        }
+      ]
+    ]
+  }
+}
